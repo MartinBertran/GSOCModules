@@ -94,7 +94,7 @@ class KeyboardInputWindow( qt.QWidget ):
         qt.QWidget.__init__( self, parent )
         self.setGeometry( 100, 200, 600, 300 )
         self.setWindowTitle( "Pressed Keys" )
-        self.code_of_last_pressed_key  =  63  #  The question mark ?
+        self.key  =  63  #  The question mark ?
         self.large_font  = qt.QFont( "SansSerif", 20, qt.QFont.Bold )
     #  The following methods will be called by the program
     #  execution system whenever keys of the keyboard are pressed.

@@ -4,18 +4,18 @@ sys.path.append('/usr/lib/python2.7/dist-packages/')
 import openslide
 from openslide import OpenSlide as OS
 
-class basicGSOCModule:
+class GSOCQtOpenslide:
   def __init__(self, parent):
-    parent.title = "basicGSOCModule"
+    parent.title = "GSOCQtOpenslide"
     parent.categories = ["Quantification"]
     parent.dependencies = []
     parent.contributors = [] 
-    parent.helpText = """basicGSOCModule, scripted loadable extension"""
+    parent.helpText = """GSOCQtOpenslide, scripted loadable extension"""
     parent.acknowledgementText = """""" # replace with organization, grant and thanks.
     self.parent = parent
 
 
-class basicGSOCModuleWidget:
+class GSOCQtOpenslideWidget:
   def __init__(self, parent = None):
     if not parent:
       self.parent = slicer.qMRMLWidget()
@@ -57,7 +57,7 @@ class basicGSOCModuleWidget:
     self.KeyboardButton = KeyboardButton
     
     # make reference to the window displaying the last pressed key
-    self.KeyboardWindow= KeyboardInputWindow()
+    self.KeyboardWindow= QtCustomWindow()
     self.KeyboardWindow.show()
 
   def onFileButtonClicked(self):
@@ -80,28 +80,70 @@ class basicGSOCModuleWidget:
     if self.KeyboardWindow.isHidden():
         self.KeyboardWindow.show()
 
-class KeyboardInputWindow( qt.QWidget ):
+class QtCustomWindow( qt.QWidget ):
     def __init__( self, parent = None ) :
         qt.QWidget.__init__( self, parent )
-        self.setGeometry( 100, 200, 600, 300 )
-        self.setWindowTitle( "Ps" )
+        self.current_x=0
+        self.current_y=0
+        self.current_zoom=0
+        self.image_width=512
+        self.image_height=512
+        self.setWindowTitle('Red Rock')
+        self.hbox = qt.QHBoxLayout(self)
+        self.lbl = qt.QLabel(self)
+        self.setLayout(self.hbox)
         self.initUI()
     def initUI(self):      
-        #
-        hbox = qt.QHBoxLayout(self)
-        pixmap = qt.QPixmap("/home/martin/Downloads/redrock.jpeg")
-        #
-        lbl = qt.QLabel(self)
-        lbl.setPixmap(pixmap)
-        #
-        hbox.addWidget(lbl)
-        self.setLayout(hbox)
-        #
-        self.move(300, 200)
-        self.setWindowTitle('Red Rock')
-        self.show()        
+        # initialize the widget, make the openslide object pointing to the
+        # multilevel image and initialize the view to the top left corner
+        
+        archivo=u'/home/martin/Downloads/CMU-1-JP2K-33005.svs'
+        # openSlide object
+        self.osr = OS(archivo)
+        self.level_count = self.osr.level_count
+        self.current_x=0
+        self.current_y=0
+        self.current_zoom=self.level_count-1
+        #width, height = osr.dimensions
+
+        
+
+        
+
+        self.hbox.addWidget(self.lbl)
         
         
+        #self.move(300, 200)
+
+        
+        self.updatePixmap()
+        self.show()
+    def updatePixmap(self):
+        im=self.osr.read_region((self.current_x,self.current_y),self.current_zoom,(self.image_width,self.image_height))
+        
+        data = im.tostring('raw', 'RGBA')
+        image = qt.QImage(data, im.size[0], im.size[1], qt.QImage.Format_ARGB32)
+        pix = qt.QPixmap.fromImage(image)
+        self.lbl.setPixmap(pix)
+        self.lbl.show()      
+    def keyPressEvent( self, event ) :
+        key = event.text()
+        print key
+        print type(key)
+        #TODO: remember to check the boundaries of the image here
+        if key=="w":
+            self.current_y += 64
+            print "w"
+        elif key=="s":
+            self.current_y -= 64
+            print "s"
+        elif key=="a":
+            self.current_x -=64
+            print "a"
+        elif key=="d":
+            self.current_x += 64
+            print "d"
+        self.updatePixmap()
 
 
 
