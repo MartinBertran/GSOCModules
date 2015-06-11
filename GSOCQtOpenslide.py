@@ -85,9 +85,10 @@ class QtCustomWindow( qt.QWidget ):
         qt.QWidget.__init__( self, parent )
         self.current_x=0
         self.current_y=0
+        #read region always works in the level 0 reference for reading locations
         self.current_zoom=0
-        self.image_width=512
-        self.image_height=512
+        self.image_width=750
+        self.image_height=750
         self.setWindowTitle('Red Rock')
         self.hbox = qt.QHBoxLayout(self)
         self.lbl = qt.QLabel(self)
@@ -104,6 +105,9 @@ class QtCustomWindow( qt.QWidget ):
         self.current_x=0
         self.current_y=0
         self.current_zoom=self.level_count-1
+        self.level_dimensions=self.osr.level_dimensions
+        print self.level_dimensions
+        print self.osr.level_downsamples
         #width, height = osr.dimensions
 
         
@@ -128,22 +132,45 @@ class QtCustomWindow( qt.QWidget ):
         self.lbl.show()      
     def keyPressEvent( self, event ) :
         key = event.text()
-        print key
-        print type(key)
-        #TODO: remember to check the boundaries of the image here
-        if key=="w":
-            self.current_y += 64
-            print "w"
-        elif key=="s":
-            self.current_y -= 64
-            print "s"
+        #larger steps for zoomed out images
+        step =int(64*self.osr.level_downsamples[self.current_zoom])
+        print type(step)
+        print type(self.current_x)
+        if key=="s":
+            
+            self.current_y += step 
+            print type(self.current_y)
+            self.current_y = min(self.current_y,int(
+                self.level_dimensions[0][1]-self.image_height*self.osr.level_downsamples[self.current_zoom]))
+        elif key=="w":
+            #larger steps for zoomed out images
+            self.current_y -= step
+            self.current_y = max(0, self.current_y)
         elif key=="a":
-            self.current_x -=64
-            print "a"
+            #larger steps for zoomed out images
+            self.current_x -= step
+            self.current_x = max(0, self.current_x)
         elif key=="d":
-            self.current_x += 64
-            print "d"
+            #larger steps for zoomed out images
+            self.current_x += step
+            self.current_x = min(self.current_x,int(
+                self.level_dimensions[0][0]-self.image_width*self.osr.level_downsamples[self.current_zoom]))
+        elif key=="q":
+            new_zoom = min(self.current_zoom+1,self.level_count-1)
+            self.updateCorner(new_zoom)
+            self.current_zoom=new_zoom
+        elif key=="e":
+            new_zoom = max(self.current_zoom-1,0)
+            self.updateCorner(new_zoom)
+            self.current_zoom=new_zoom
+        print "x: %s" % self.current_x
+        print "y: %s" % self.current_y
+        print "zoom: %s" % self.current_zoom
         self.updatePixmap()
-
+    def updateCorner(self,new_zoom):
+        #updates the current_x and current_y values to preserve the image center
+        #while zooming
+        self.current_x=int(self.current_x + self.image_width /2 *(self.osr.level_downsamples[self.current_zoom]-self.osr.level_downsamples[new_zoom]))
+        self.current_y=int(self.current_y + self.image_height /2 *(self.osr.level_downsamples[self.current_zoom]-self.osr.level_downsamples[new_zoom]))
 
 
